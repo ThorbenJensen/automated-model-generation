@@ -1,0 +1,84 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; TECHNOLOGY DIFFUSION ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+; method controling behavior diffusion
+to technology-diffusion-schwarz
+  
+  ; deliberate at montly replacement rate for showerhead
+  if random-float 1 < deliberation_rate [
+    
+    ; calculate social norm (i.e. what majority of peers does)
+    let norm ""
+    let non-adopting-peers (count in-link-neighbors with [ adopting-technology? = false ])
+    let adopting-peers (count in-link-neighbors with [ adopting-technology? = true ])
+    ifelse non-adopting-peers > adopting-peers
+      [ set norm false ]
+      [ set norm true ]
+    
+    ; IF lifestyle postmaterial or leader: use deliberate decision via Theory of Planned Behavior
+    if lifestyle = "postmaterial" or lifestyle = "leader" [
+      ;; standard showerhead
+      ; initializing attitude
+      ;let attitude-standard 0
+      ; updating attitude and control according to lifestyle
+      ;if lifestyle = "postmaterial" [
+      ;  set attitude-standard ((postmaterial-imp-environment * sh-standard-environm) + (postmaterial-imp-ease * sh-standard-ease) + (postmaterial-imp-intrastr * sh-standard-infrastr))
+      ;]
+      ;if lifestyle = "leader" [
+      ;  set attitude-standard ((leader-imp-environment * sh-standard-environm) + (leader-imp-ease * sh-standard-ease) + (leader-imp-intrastr * sh-standard-infrastr))
+      ;]
+      ; calculate behavior control
+      ;let control-standard ((sh-control-intrastr * sh-standard-infrastr) + (sh-control-costs * sh-standard-costs))
+      ; calculate utlilty for standard showerhead
+      ;let utility-standard ((sh-imp-attitude * attitude-standard) + (sh-imp-control * control-standard))
+      
+      ;; saving showerhead
+      ; initializing attitude
+      ;let attitude-saving 0
+      ; updating attitude and control according to lifestyle
+      ;if lifestyle = "postmaterial" [
+      ;  set attitude-saving ((postmaterial-imp-environment * sh-saving-environm) + (postmaterial-imp-ease * sh-saving-ease) + (postmaterial-imp-intrastr * sh-saving-infrastr))
+      ;]
+      ;if lifestyle = "leader" [
+      ;  set attitude-saving ((leader-imp-environment * sh-saving-environm) + (leader-imp-ease * sh-saving-ease) + (leader-imp-intrastr * sh-saving-infrastr))
+      ;]
+      ; calculate behavior control
+      ;let control-saving ((sh-control-intrastr * sh-saving-infrastr) + (sh-control-costs * sh-saving-costs))
+      ; calculate utlilty for standard showerhead
+      ;let utility-saving ((sh-imp-attitude * attitude-saving) + (sh-imp-control * control-saving))
+      
+      ;if utility-saving <= utility-standard [ print "standard showerhead chosen!" ]
+      
+      
+      ifelse random-float 1 < p_leader_social ; default value = 1
+        [ set adopting-technology? norm ]
+        [ set adopting-technology? true ] ;IF: utility-standard > utility: adopt technology
+    ]
+    
+    
+    ; IF other lifestyle: use 'take the best' heuristic
+    
+    ; mainstream / traditional -> p(imitation) = 0.5; p(adoption) = 0.5
+    if lifestyle = "mainstream" or lifestyle = "traditional" [
+      ; let either social norm (-> majority of peers) or savings criteria (-> savings showerhead) decide
+      ifelse random-float 1 < p_mainstream_social ; default value = 0.5
+        [ set adopting-technology? norm ]
+        [ set adopting-technology? true ]
+      
+      ; ATTENTION: schwarz might use 0.33 for p(adoption)
+    ]
+    
+    if lifestyle = "hedonistic" [          
+      ; let either social norm (-> majority of peers) or savings criteria (-> savings showerhead) decide
+      ifelse random-float 1 < p_hedonistic_social ; default value = 0.5
+        [ set adopting-technology? norm ]
+        [ set adopting-technology? true ]
+      
+    ]    
+  
+    ; make neighbors aware
+    if adopting-technology? [ ask out-link-neighbors [ set aware-of-technology? true ]]
+  ]
+end

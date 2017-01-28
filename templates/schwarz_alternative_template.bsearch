@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<!DOCTYPE search SYSTEM "behaviorsearch.dtd">
+<search>
+<bsearchVersionNumber>1.00</bsearchVersionNumber>
+<modelInfo>
+<modelFile>/Users/thorbenje/phd/models/chapter4/meta_model.nlogo</modelFile>
+<modelSetupCommands>setup</modelSetupCommands>
+<modelStepCommands>simulate</modelStepCommands>
+<modelStopCondition>false</modelStopCondition>
+<modelStepLimit>181</modelStepLimit>
+<modelMetricReporter>pattern-technology-adoption + (1000 * pattern-exponential-take-off)</modelMetricReporter>
+<modelMeasureIf>ticks = 181</modelMeasureIf>
+</modelInfo>
+<fitnessInfo>
+<fitnessMinimized>true</fitnessMinimized>
+<fitnessCollecting>MEDIAN_ACROSS_STEPS</fitnessCollecting>
+<fitnessSamplingReplications>5</fitnessSamplingReplications>
+<fitnessCombineReplications>MEDIAN</fitnessCombineReplications>
+</fitnessInfo>
+<searchSpace>
+<paramSpec>["technology-diffusion-method" "schwarz_alternative"]</paramSpec>
+<paramSpec>["word-of-mouth?" true false]</paramSpec>
+<paramSpec>["technology-adoption" 0]</paramSpec>
+<paramSpec>["technology-awareness" 5]</paramSpec>
+<paramSpec>["debug?" false]</paramSpec>
+<paramSpec>["deliberation_rate" [0.004 "C" 0.04]]</paramSpec>
+<paramSpec>["innovation" "showerhead"]</paramSpec>
+<paramSpec>["leader_w_social" [0 "C" 1]]</paramSpec>
+<paramSpec>["main_w_social" [0 "C" 1]]</paramSpec>
+<paramSpec>["hed_w_social" [0 "C" 1]]</paramSpec>
+<paramSpec>["policy" "off"]</paramSpec>
+</searchSpace>
+<searchMethod type="SimulatedAnnealing">
+<searchMethodParameter name="mutation-rate" value="0.05"/>
+<searchMethodParameter name="temperature-change-factor" value="0.99"/>
+<searchMethodParameter name="initial-temperature" value="1.0"/>
+<searchMethodParameter name="restart-after-stall-count" value="0"/>
+</searchMethod>
+<chromosomeRepresentation type="MixedTypeChromosome"/>
+<caching>true</caching>
+<evaluationLimit>300</evaluationLimit>
+<bestCheckingNumReplications>0</bestCheckingNumReplications>
+</search>

@@ -1,0 +1,42 @@
+;; PATTERN ON TECHNOLOGY ADOPTION AFTER 180 TIME STEPS
+
+to-report pattern-technology-adoption 
+  
+  ; TODO: uncomment
+  ;if ticks != 180 [ report 10000000000 ] ; only compute distance at time step 180
+  
+  
+  ; define target values for each lifestyle category (from Schwarz's survey)
+  let target-leader       55
+  let target-postmaterial 42
+  let target-mainstream   21
+  let target-traditional  29
+  let target-hedonistic   0
+  
+  let dist 0
+  
+  foreach ["leader" "postmaterial" "mainstream" "traditional" "hedonistic"] [
+    let loop-lifestyle ?
+
+    ; calculate adoption share of lifestyle
+    let adoption-share ((count turtles with [lifestyle = loop-lifestyle] with [ adopting-technology? ]) / count turtles with [lifestyle = loop-lifestyle]) * 100
+
+    ; set 'target' according to lifestyle category
+    let target 0
+    if loop-lifestyle = "leader"       [ set target target-leader       ]
+    if loop-lifestyle = "postmaterial" [ set target target-postmaterial ]
+    if loop-lifestyle = "mainstream"   [ set target target-mainstream   ]
+    if loop-lifestyle = "traditional"  [ set target target-traditional  ]
+    if loop-lifestyle = "hedonistic"   [ set target target-hedonistic   ]
+    
+    let diff (abs (adoption-share - target))    ; calculate (absolute) difference between adoption share and targets
+    let lifestyle-share (count turtles with [lifestyle = loop-lifestyle] / count turtles)   ; weigh this difference by share of lifestyle of all households
+    let weighted-diff (lifestyle-share * diff)
+
+    set dist (dist + weighted-diff)     ; add difference to 'dist', weighted by share of lifestyle
+    if debug? [ print (word "Target distance for lifestyle " loop-lifestyle ": " diff ". Which accounts for a weighted distance of " weighted-diff) ]
+  ]
+  
+  report dist
+  
+end

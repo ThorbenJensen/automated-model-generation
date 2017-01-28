@@ -1,0 +1,2 @@
+"search-number","evaluation","number-of-nodes*","network-method*","technology-diffusion-method*","word-of-mouth?*","seeding-percentage*","debug?*","innovation*","p_leader_social*","p_mainstream_social*","p_hedonistic_social*","num-replicates","best-fitness-so-far"
+"1","300","1000","""suslab""","""schwarz""","false","0","false","""showerhead""","0.08459046680067178","0.5211041816233262","1","1","2.874999999999999"

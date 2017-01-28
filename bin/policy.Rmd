@@ -1,0 +1,277 @@
+SIMULATE POLICY SCENARIOS ON TOP OF INVERSE MODELING RESULTS
+===
+
+DEFINE MODELS, POLICIES AND PARAMETERS
+---
+```{r}
+
+setwd("/Users/thorbenje/phd/models/chapter4/")
+netlogo_jar <- "'/Users/thorbenje/bin/Netlogo 5.0.4/NetLogo.jar'"
+
+model_config <- data.frame(model = character(0), `word-of-mouth?` = character(0), stringsAsFactors = FALSE, check.names=FALSE)
+
+# define models
+model_config[nrow(model_config)+1,] <- c("schwarz", "true")
+model_config[nrow(model_config)+1,] <- c("schwarz_alternative", "true")
+# define policies
+policies <- c("seed_10_percent", "seed-10-percent-opinion-leaders")
+
+
+print("Running models with the following configurations:")
+model_config
+print("Running the following policies:")
+policies
+
+```
+
+GENERATE .XML FILES (FROM TEMPLATE) FOR POLICY SIMULATIONS
+---
+```{r}
+ library(XML)
+
+# model  <- "schwarz"
+# policy <- "seed_10_percent"
+
+for (model_config_row in 1:nrow(model_config)) {
+  for (policy in policies) {
+
+    model <- model_config[model_config_row,]$model
+    wom <- model_config[model_config_row,]$`word-of-mouth?`
+    
+    # read XML template
+    xml <- xmlParseDoc("templates/policy_template.xml")
+    
+    # add 'policy' according to policy choices
+    node <- getNodeSet(xml, "//experiments/experiment/enumeratedValueSet")[[1]]
+    addChildren(node, newXMLNode("value", attrs = c(value = paste("\"",policy,"\"",sep=""))))
+    
+    # change 'technology-diffusion-method' according to model
+    node <- getNodeSet(xml, "//experiments/experiment/enumeratedValueSet")[[10]]
+    child <- xmlChildren(node)[[1]]
+    xmlAttrs(child) <- c(value = paste("\"",model,"\"",sep=""))
+    
+    # set 'word-of-mouth?' according to user choice
+    node <- getNodeSet(xml, "//experiments/experiment/enumeratedValueSet[@variable=\"word-of-mouth?\"]")[[1]]
+    child <- xmlChildren(node)[[1]]
+    xmlAttrs(child) <- c(value = wom)
+    
+    # identify parameters from run with best fit
+    bests       <- read.csv(paste("output/",model,"_wom",wom,".objectiveFunctionHistory.csv",sep=""), check.names=FALSE)
+    #bests       <- bests[bests$`word-of-mouth?*` == wom,]   # select columns with the right word of mouth
+    best        <- bests[bests$fitness == min(bests$fitness),] 
+    names(best) <- gsub("\\*", "", names(best)) # select columns on NetLogo parameters
+    best        <- best[ , -which(names(best) %in% c("search-number","evaluation", "num-replicates", "best-fitness-so-far", "fitness", "word-of-mouth?"))]
+    best        <- best[, !names(best) %in% "policy"]  # drop 'policy' column from 'best' (because policy is already set above)
+    
+    
+    # iterate through 'best' and set simulation parameters as in best fit
+    param_names <- names(best)   # get column names from inverse modeling that need to be adapted in policy XML
+    for (param_name in param_names) {
+      
+      print(paste("Subsituting parameter value for variable", param_name,"..."))
+      param_value <- best[,names(best) == param_name]
+      
+      node <- getNodeSet(xml, paste('//experiments/experiment/enumeratedValueSet[@variable="',param_name,'"]',sep=''))[[1]]
+      child <- xmlChildren(node)[[1]]
+      xmlAttrs(child) <- c(value = toString(param_value))
+    }
+    
+    # write new XML file to 'policy' folder
+    filename <- paste("policy/",model,"_wom",wom,"_",policy,".xml",sep="")
+    print(paste("Saving experiment configuration to:",filename,"..."))
+    saveXML(xml, file=filename)
+
+  }
+}
+
+```
+
+RUN POLICY SIMULATIONS
+---
+```{r}
+
+for (model_config_row in 1:nrow(model_config)) {
+  for (policy in policies) {
+    
+    model <- model_config[model_config_row,]$model
+    wom <- model_config[model_config_row,]$`word-of-mouth?`
+
+    print(paste("Simulating '",model,"' model (word-of-mouth: ",wom,") with policy '",policy,"' ...", sep=""))
+    
+    command <- paste( "java -Xmx1024m -Dfile.encoding=UTF-8 -cp ",netlogo_jar,
+                      " org.nlogo.headless.Main",
+                      " --model meta_model.nlogo",
+                      " --setup-file policy/",model,"_","wom",wom,"_",policy,".xml",
+                      " --experiment policy",
+                      " --table policy/",model,"_wom",wom,"_",policy,"-table.csv",
+                      sep="")
+    command
+    system(command)
+  }
+}
+
+print("Policy simulation finished.")
+
+```
+
+ANALYZE RESULTS
+---
+```{r}
+
+for (model_config_row in 1:nrow(model_config)) {
+  for (policy in policies) {
+    
+    model <- model_config[model_config_row,]$model
+    wom <- model_config[model_config_row,]$`word-of-mouth?`
+    
+    # read results
+    dat <- read.csv(paste("policy/",model,"_wom",wom,"_",policy,"-table.csv",sep=""),skip=6)
+    dat <- dat[dat$X.step. == 300,]
+    
+    # rename colnames
+    colnames(dat)[21] <- "adoption_share"
+    colnames(dat)[22] <- "adoption_share_leaer"
+    colnames(dat)[23] <- "adoption_share_mainstream"
+    colnames(dat)[24] <- "adoption_share_hedonists"
+    
+    # calculate impacts
+    dat_control   <- dat[dat$policy == "\"off\"",]
+    dat_treatment <- dat[dat$policy != "\"off\"",]
+    mean_additional_adoption <- (mean(dat_treatment$adoption_share) - mean(dat_control$adoption_share)) * 100
+    
+    # report impacts
+    print ("POLICY REPORT")
+    print (paste("Model:",  model))
+    print (paste("Policy:", policy))
+    print (paste("Word-of-mouth:", wom))
+    print (paste("Average additional adoption after 10 years of policy:", mean_additional_adoption))
+  }
+}
+
+```
+
+PLOT DIFFUSION CURVE WITH AND WITHOUT POLICY IMPACT
+---
+```{r}
+
+library(ggplot2)
+library(reshape)
+library(grid)
+library(scales)
+library(gridExtra)
+library(gtable)
+
+
+policy_plot <- function(model, wom, policy) {
+
+    # read results
+    dat <- read.csv(paste("policy/",model,"_wom",wom,"_",policy,"-table.csv",sep=""),skip=6) # TODO: hand over index of 'policies' as parameter 
+    
+    # rename colnames
+    colnames(dat)[21] <- "adoption_share"
+    colnames(dat)[22] <- "adoption_share_leaer"
+    colnames(dat)[23] <- "adoption_share_mainstream"
+    colnames(dat)[24] <- "adoption_share_hedonists"
+    
+    # adjust from adoption share to percentage
+    dat[21:24] <- dat[21:24] * 100
+
+    # separate control and treatment
+    dat_control   <- dat[dat$policy == "\"off\"",]
+    dat_treatment <- dat[dat$policy != "\"off\"",]
+    
+    # quartile function
+    median.quartile <- function(x){
+      out <- quantile(x, probs = c(0.25,0.5,0.75))
+      names(out) <- c("ymin","y","ymax")
+      return(out) 
+    }
+    uci <- function(y){max(y)}
+    lci <- function(y){min(y)}
+    
+    # define model label
+    label <- "MODEL_LABEL"
+    if (model == "schwarz") label <- "Schwarz flexible (WOM)"
+    if (model == "schwarz_alternative") label <- "TPB (WOM)"
+    
+    # define
+    policy_label <- "POLICY_LABEL"
+    if (policy == "seed_10_percent") policy_label <- "'give to 10% (all households)'"
+    if (policy == "seed-10-percent-opinion-leaders") policy_label <- "'give to 10% (opinion leaders)'"
+    
+    # transform time axis from month to year
+    dat_control$X.step. <- dat_control$X.step. / 12
+    dat_treatment$X.step. <- dat_treatment$X.step. / 12
+    
+    ggplot(data=NULL, aes(x=X.step.)) +
+      geom_vline(xintercept = c(15), linetype="dotted", col="red") +
+      stat_summary(data=dat_control[dat_control$X.step. %in% seq(0,25,by=5),], aes(y=adoption_share),
+                 fun.data = median.quartile, 
+                 geom = "errorbar",
+                 width = 1,
+                 size = .5,
+                 color = "#999999") +
+            stat_summary(data=dat_treatment[dat_treatment$X.step. %in% seq(0,25,by=5),], aes(y=adoption_share),
+                 fun.data = median.quartile, 
+                 geom = "errorbar",
+                 width = 1,
+                 size = .5,
+                 color = "black") +
+      stat_summary(data=dat_treatment, aes(y=adoption_share, linetype="a"), fun.data = "mean_cl_boot", size = .5, geom="line") +
+      stat_summary(data=dat_control, aes(y=adoption_share, linetype="b"), fun.data = "mean_cl_boot", size = .5, geom="line", color="#999999") +
+      stat_summary(data=dat_control[dat_control$X.step. %in% seq(0,25,by=5),], aes(y=adoption_share), shape = 16,
+               size = 2, fun.data = "mean_cl_boot", geom = "point", color="#999999") +
+      stat_summary(data=dat_treatment[dat_treatment$X.step. %in% seq(0,25,by=5),], aes(y=adoption_share), shape = 16,
+               size = 2, fun.data = "mean_cl_boot", geom = "point") +
+      theme_bw(base_size = 8) +
+      ylab("Adoption share (%)") +
+      #xlab("Month") +
+      scale_x_continuous(name ="Year", breaks=seq(0,25,5)) +
+      scale_linetype_manual(name   = label, 
+                            labels = c(paste("Policy Scenario\n", policy_label,sep=""), "Reference Scenario"), 
+                            values = c("solid", "dashed")) +
+      theme(legend.position = c(-0.01,1.01), legend.justification=c(0,1), legend.box.just = "left") +
+      coord_cartesian(ylim = c(0,100))
+}
+
+
+# create plots
+model <- "schwarz"
+wom <- "true"
+policy <- "seed_10_percent"
+p1 <- policy_plot(model, wom, policy)
+
+model <- "schwarz_alternative"
+wom <- "true"
+policy <- "seed_10_percent"
+p2 <- policy_plot(model, wom, policy)
+
+
+pdf("/Users/thorbenje/phd/paper/chapter4/img/policy.pdf", width = 3.5, height = 4)
+grid.arrange(
+  p1,p2, ncol=1
+)
+dev.off()
+
+
+model <- "schwarz"
+wom <- "true"
+policy <- "seed-10-percent-opinion-leaders"
+p3 <- policy_plot(model, wom, policy)
+
+model <- "schwarz_alternative"
+wom <- "true"
+policy <- "seed-10-percent-opinion-leaders"
+p4 <- policy_plot(model, wom, policy)
+
+
+pdf("/Users/thorbenje/phd/paper/chapter4/img/policy2.pdf", width = 3.5, height = 4)
+grid.arrange(
+  p3,p4, ncol=1
+)
+dev.off()
+
+
+```
+
+

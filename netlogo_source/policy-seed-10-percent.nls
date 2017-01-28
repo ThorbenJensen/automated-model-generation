@@ -1,0 +1,22 @@
+to policy-seed-10-percent
+  
+  if ticks = 180 [
+  
+    let additional_adopters 0.1 * (count turtles)
+  
+    let i 0
+  
+    while [i < additional_adopters] [
+     
+      ask one-of turtles with [not adopting-technology?] [
+        ; make turtle adopt innovation
+        set adopting-technology? true
+        ; make out-neighbors aware of innovation
+        ask out-link-neighbors [ set aware-of-technology? true ]
+      ] 
+      
+      set i (i + 1)
+    ] 
+  ]
+  
+end

@@ -1,0 +1,220 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; EMPIRICAL SOCIAL NETWORK FROM SUSLAB DATA ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; REQUIREMENT
+; - turtles need variable degree
+
+
+;; Patterns the network graph has to suffice
+; - degree distribution: lognormal (peak = 2, mean = 3.9)
+; - ratio between local and global links (50/50)
+
+; - 'spatial proximity': 50% of connections within max-distance
+
+; - 'homophily': increased linkage within lifestyles (generic assumption: 40% instead of ~25%)
+
+to social-network-suslab
+  
+  clear-links
+  reset-ticks
+
+  ; save lifestyles for homophily
+  let lifestyles (list "postmaterial" "leader" "traditional" "mainstream" "hedonistic")
+  
+  ;; assign degree to turtles
+  ; degree distribution
+  let degree-dist [ 1 2 2 2 3 3 4 5 6 7 8 ]
+  ; assign degree to turtles
+  ask turtles [
+    set degree one-of degree-dist
+  ]
+  
+  ;; STAGE 1: connect to 'degree' neighbors, but weighted by homophily
+
+  ; list of free turtles
+  let free-link-turtles turtles with [count link-neighbors < degree]
+
+  ; While 'sufficient' turtles need more links: connect turtles with free links
+  while [ count free-link-turtles > 0 ] [
+    
+    ; choose random agent
+    ask one-of free-link-turtles [
+        
+      ; add links to agent WHILE: 1. this agent still has free links and 2. close links are possible
+      WHILE [ (count link-neighbors < degree) and (any? other free-link-turtles with [ distance myself < max-distance and not link-neighbor? myself] ) ] [
+        
+        ;; choose lifestyle to connect to (generic 40% homophily)
+        let other-lifestyle ""
+        ifelse random-float  1 < 0.25 ; results in 40% homophily
+          [ set other-lifestyle lifestyle ] ; homophile case
+          [ set other-lifestyle one-of lifestyles ]
+        ;; catch case that lifestyle is still empty
+        if other-lifestyle = "" [ print "Error at selection of other-lifestyle!" ] 
+
+        let close-free-link-turtles other free-link-turtles with [ distance myself < max-distance and lifestyle = other-lifestyle and not link-neighbor? myself] 
+
+        ; if close turtles with desired lifestyle exist: link to one close turtle that is not neighbor yet
+        let peer one-of close-free-link-turtles
+        if peer != nobody [
+          create-link-with peer
+          ;; if peer has no free links left: remove from free-link-turtles
+          ask peer [
+            if count link-neighbors >= degree [ set free-link-turtles other free-link-turtles ] 
+          ]
+        ]
+      ]
+      
+      ; HERE: all possible close links are made for this agent, remove from free-link-turtles
+      set free-link-turtles other free-link-turtles ; remove from free-link-turtles
+      
+    ]
+  ]
+  
+  ;; STAGE 2: rewire network: substitute 50% of short distance links with long-distance links
+  
+  ask links [
+    if random-float 1 < 0.5 [ die ]  
+  ]
+  
+  ; list of free turtles
+  set free-link-turtles turtles with [count link-neighbors < degree]
+
+  ; While 'sufficient' turtles need more links: connect turtles with free links
+  while [ count free-link-turtles > 0 ] [
+    
+    ; choose random agent
+    ask one-of free-link-turtles [
+        
+      ; add links to agent WHILE: 1. this agent still has free links and 2. close links are possible
+      WHILE [ (count link-neighbors < degree) and (any? other free-link-turtles with [ distance myself >= max-distance and not link-neighbor? myself] ) ] [
+        
+        ;; choose lifestyle to connect to (generic 40% homophily)
+        let other-lifestyle ""
+        ifelse random-float  1 < 0.25 ; results in 40% homophily
+          [ set other-lifestyle lifestyle ] ; homophile case
+          [ set other-lifestyle one-of lifestyles ]
+        ;; catch case that lifestyle is still empty
+        if other-lifestyle = "" [ print "Error at selection of other-lifestyle!" ] 
+
+        let close-free-link-turtles other free-link-turtles with [ distance myself >= max-distance and lifestyle = other-lifestyle and not link-neighbor? myself] 
+
+        ; if close turtles with desired lifestyle exist: link to one close turtle that is not neighbor yet
+        let peer one-of close-free-link-turtles
+        if peer != nobody [
+          create-link-with peer
+          ;; if peer has no free links left: remove from free-link-turtles
+          ask peer [
+            if count link-neighbors >= degree [ set free-link-turtles other free-link-turtles ] 
+          ]
+        ]
+      ]
+      
+      ; HERE: all possible close links are made for this agent, remove from free-link-turtles
+      set free-link-turtles other free-link-turtles ; remove from free-link-turtles
+      
+    ]
+  ]
+    
+  tick
+end
+
+;; DEPRECATED: method is buggy (e.g. choice of lifestyles of peers is monotonous)
+;; updated suslab version, closer to SMALL WORLD generator
+to social-network-suslab-deprecated
+  
+    ; TODO: include lifestyles
+  ; TODO: make connection propability dependent on distance power law (see Holzhauer) 
+  
+  clear-links
+  reset-ticks
+  
+  ;; assign degree to turtles
+  ; degree distribution
+  let degree-dist [ 1 2 2 2 3 3 4 5 6 7 8 ]
+  ; assign degree to turtles
+  ask turtles [
+    set degree one-of degree-dist
+  ]
+  
+  ; list of free turtles
+  let free-link-turtles turtles with [count link-neighbors < degree]
+  
+  ; While 'sufficient' turtles need more links: connect turtles with free links
+  while [ count free-link-turtles > 0 ] [
+    
+    ; create all links for agent with least links
+    ask min-one-of free-link-turtles [count my-links] [
+      
+      ; start ring search at inner ring
+      let i 1
+      
+      ; create agent-set of turtles within max-distance (i.e. within rings)
+      let other-lifestyle choose-other-lifestyle
+      let close-free-link-turtles other free-link-turtles with [ distance myself < max-distance and lifestyle = other-lifestyle ]
+      
+      ; if agent has no close-free-link-turtles, remove him from list of agents with free links
+      if count close-free-link-turtles = 0 [
+        set free-link-turtles other free-link-turtles 
+      ]
+      
+      ; make all connections for this agent
+      while [count link-neighbors < degree and count close-free-link-turtles > 0] [  
+        
+        if count close-free-link-turtles = 0 [
+          show "Error in social-network-suslab: no close neighbor left"
+          show one-of close-free-link-turtles
+        ]
+      
+        ; iterate over rings
+        let ring-max (max-distance * (i / 10))
+        let ring-min (ring-max - (max-distance / 10))
+        
+        ; choose close-distance peer: within ring and of random lifestyle         
+        let peer one-of close-free-link-turtles with [ distance myself < ring-max and distance myself >= ring-min]
+        
+        if peer != nobody [ 
+          
+          ; create short-distance link
+          create-link-with peer 
+          ; remove peer from list, if needed
+          ask peer [ if count link-neighbors = degree [ 
+              set free-link-turtles other free-link-turtles 
+              set close-free-link-turtles other close-free-link-turtles
+          ] ]
+          
+          ; if free links left: create long distance link
+          if count link-neighbors < degree [
+            
+            ; create long distance link
+            set other-lifestyle choose-other-lifestyle
+            set peer one-of other free-link-turtles with [ lifestyle = other-lifestyle ]
+            ;set peer one-of other free-link-turtles
+            
+            if peer != nobody [
+              create-link-with peer
+              ; remove peer from list, if needed
+              ask peer [ if count link-neighbors = degree [ 
+                set free-link-turtles other free-link-turtles 
+                set close-free-link-turtles other close-free-link-turtles
+              ] ]
+            ]
+          ]
+          
+          ; HERE: just created 1 or 2 more links -> check for removal from free-link-turtles list
+          if count link-neighbors = degree [
+            ; remove from list 
+            set free-link-turtles other free-link-turtles
+          ]
+        ]
+        
+        ; choose next ring
+        set i (i + 1)
+        ; if i = 11: reset to 1
+        if i = 11 [ set i 1 ]
+      ]  
+    ]
+  ]
+  tick
+
+end

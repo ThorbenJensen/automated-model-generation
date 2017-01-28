@@ -1,0 +1,184 @@
+Generating plots for paper #4
+===
+
+
+DEFINE MODELS TO RUN
+---
+```{r}
+
+setwd("/Users/thorbenje/phd/models/chapter4/")
+netlogo_jar <- "'/Users/thorbenje/bin/Netlogo 5.0.4/NetLogo.jar'"
+
+schwarz_wom <- "schwarz_wom"
+schwarz_nowom <- "schwarz_nowom"
+schwarz_alternative_wom <- "schwarz_alternative_wom"
+schwarz_alternative_nowom <- "schwarz_alternative_nowom"
+
+# choose models and search effort
+models <- c(schwarz_wom, schwarz_nowom, schwarz_alternative_wom, schwarz_alternative_nowom)   
+
+# time for 4 models and 10 repetitions each: 1 minute
+
+```
+
+
+RUN MODELS (EXECUTE BEHAVIOR SPACE EXPERIMENTS)
+---
+```{r}
+
+# model <- "schwarz_wom"
+
+for (model in models) {
+
+    print(paste("Simulating '",model,"' ...", sep=""))
+    
+    command <- paste( "java -Xmx1024m -Dfile.encoding=UTF-8 -cp ",netlogo_jar,
+                      " org.nlogo.headless.Main",
+                      " --model meta_model.nlogo",
+                      " --setup-file plots/plot_",model,".xml",
+                      " --experiment ",model,
+                      " --table plots/data/",model,"-table.csv",
+                      sep="")
+    command
+    time <- system.time(system(command))
+    print(time)
+}
+
+```
+
+READ SIMULATION DATA
+---
+```{r}
+
+# model <- "schwarz_wom"
+
+
+# FUNCTION: for one model:
+plot_diffusion <- function(model) {
+
+  # get data
+  dat <- read.csv(paste("plots/data/",model,"-table.csv",sep=""),skip=6)
+  
+  # rename colnames
+  names(dat)[21] <- "adoption"
+  names(dat)[22] <- "adoption_lead"
+  names(dat)[23] <- "adoption_main"
+  names(dat)[24] <- "adoption_hed"
+  
+  # ratio to percentage
+  dat[21:24] <- dat[21:24] * 100
+  
+  # define label
+  if (model == "schwarz_wom") text <- "Schwarz flexible \n (WOM)"
+  if (model == "schwarz_nowom") text <- "Schwarz flexible \n (no WOM)"
+  if (model == "schwarz_alternative_wom") text <- "TPB (WOM)"
+  if (model == "schwarz_alternative_nowom") text <- "TPB (no WOM)"
+  
+  # quartile function
+  median.quartile <- function(x){
+    out <- quantile(x, probs = c(0.25,0.5,0.75))
+    names(out) <- c("ymin","y","ymax")
+    return(out) 
+  }
+  uci <- function(y){max(y)}
+  lci <- function(y){min(y)}
+  
+  # transform from months to years
+  dat$X.step. <- dat$X.step. / 12
+  
+  # plot diffusion
+  library(ggplot2)
+  p <- ggplot(data=NULL, aes(x=X.step.)) +
+    stat_summary(data=dat, aes(y=adoption_lead), fun.data = "mean_cl_boot", size = .5, geom="line") +
+    stat_summary(data=dat, aes(y=adoption_main), fun.data = "mean_cl_boot", size = .5, geom="line") +
+    stat_summary(data=dat, aes(y=adoption_hed ), fun.data = "mean_cl_boot", size = .5, geom="line") +
+    stat_summary(data=dat[dat$X.step. %in% seq(0,15,by=5),], aes(y=adoption_lead),
+                 fun.data = median.quartile, 
+                 geom = "errorbar",
+                 width = 1,
+                 size = .5,
+                 color = "black") +
+    stat_summary(data=dat[dat$X.step. %in% seq(0,15,by=5),], aes(y=adoption_main),
+                 fun.data = median.quartile, 
+                 geom = "errorbar",
+                 width = 1,
+                 size = .5,
+                 color = "black") +
+    stat_summary(data=dat[dat$X.step. %in% seq(0,15,by=5),], aes(y=adoption_hed),
+                 fun.data = median.quartile, 
+                 geom = "errorbar",
+                 width = 1,
+                 size = .5,
+                 color = "black") +
+    stat_summary(data=dat[dat$X.step. %in% seq(5,15,by=5),], aes(y=adoption_lead, shape = "15"),
+               size = 2, fun.data = "mean_cl_boot", geom = "point") +
+    stat_summary(data=dat[dat$X.step. %in% seq(5,15,by=5),], aes(y=adoption_main, shape = "16"),
+               size = 2, fun.data = "mean_cl_boot", geom = "point") +
+    stat_summary(data=dat[dat$X.step. %in% seq(5,15,by=5),], aes(y=adoption_hed, shape = "17"),
+               size = 2, fun.data = "mean_cl_boot", geom = "point") + 
+    theme_bw(base_size = 8) +
+    scale_shape_manual("Lifestyle",
+                       values=c(15,17,16), 
+                       labels=c("Leading Lifestyles", "Mainstream", "Hedonists")) +
+    coord_cartesian(ylim = c(0,100)) +
+    ylab("Adoption share (%)") +
+    xlab("Year") +
+    # vertical line
+    #geom_vline(xintercept=180, linetype="dotted", color="red") +
+    # add validation points
+    geom_point(aes(x=15, y=55), shape=0, color="red", size= 2) +
+    geom_point(aes(x=15, y=42), shape=0, color="red", size= 2) +
+    geom_point(aes(x=15, y=29), shape=2, color="red", size= 2) +
+    geom_point(aes(x=15, y=21), shape=2, color="red", size= 2) +
+    geom_point(aes(x=15, y=0),  shape=1, color="red", size= 2) +
+    # label on model
+    geom_text(aes(label=text, x=0, y=95), size=2.8, hjust=0)
+    #annotation_custom(my_grob)
+  
+  p 
+}
+
+# execute plot function for all models, save plots
+p1 <- plot_diffusion("schwarz_nowom")
+p2 <- plot_diffusion("schwarz_wom")
+p3 <- plot_diffusion("schwarz_alternative_nowom")
+p4 <- plot_diffusion("schwarz_alternative_wom")
+
+# combine plots into a single one
+library(gridExtra)
+library(grid)
+library(gtable)
+
+get_legend<-function(myggplot){
+  tmp <- ggplot_gtable(ggplot_build(myggplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+
+legend <- get_legend(p1)
+p1 <- p1 + theme(legend.position="none")
+p2 <- p2 + theme(legend.position="none")
+p3 <- p3 + theme(legend.position="none")
+p4 <- p4 + theme(legend.position="none")
+
+pdf("/Users/thorbenje/phd/paper/chapter4/img/models.pdf", width = 7, height = 2)
+grid.arrange(
+  arrangeGrob(p1,p2,p3,p4, ncol=4),legend, ncol=2,
+  widths=c(4, 1)
+  #left = textGrob("Marketing strategies", rot = 90, vjust = 1),
+  #bottom = textGrob("year", vjust = 0)
+)
+dev.off()
+
+
+```
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,139 @@
+;; PATTERN ON TECHNOLOGY ADOPTION AFTER 180 TIME STEPS
+
+
+; TODO
+; reduce redundancy
+
+
+globals [  
+  
+  ;; INNOVATION PARAMETERS
+  innovation-environmental
+  innovation-ease
+  innovation-compatibility
+  innovation-savings
+  innovation-installation
+
+  default-environmental
+  default-ease
+  default-compatibility
+  default-savings
+  default-installation
+  
+  
+  ;; DECISION MODEL PARAMETERS (schwarz)
+  postmaterial-imp-environment
+  postmaterial-imp-ease       
+  postmaterial-imp-intrastr   
+  leader-imp-environment      
+  leader-imp-ease             
+  leader-imp-intrastr         
+  ; technology specific weights
+  sh-imp-attitude     
+  sh-imp-control      
+  sh-control-intrastr 
+  sh-control-costs    
+  ; innovation characteristics
+  sh-standard-environm 
+  sh-standard-ease     
+  sh-standard-infrastr 
+  sh-standard-savings  
+  sh-standard-costs    
+  sh-saving-environm   
+  sh-saving-ease       
+  sh-saving-infrastr   
+  sh-saving-savings    
+  sh-saving-costs      
+  
+  
+  ;; DECISION MODEL PARAMETERS (schwarz-alternative)
+  leader_w_environmental 
+  leader_w_ease          
+  leader_w_compatibility 
+  leader_w_savings       
+  leader_w_installation  
+    
+  main_w_environmental   
+  main_w_ease            
+  main_w_compatibility   
+  main_w_savings         
+  main_w_installation    
+    
+  hed_w_environmental    
+  hed_w_ease             
+  hed_w_compatibility    
+  hed_w_savings          
+  hed_w_installation     
+  
+  ]
+
+to load-innovation-properties
+  
+  ;; INNOVATION PARAMETERS
+  if innovation = "showerhead" [
+    set innovation-environmental 0.85
+    set innovation-ease          0.75
+    set innovation-compatibility 0.7
+    set innovation-savings       0.5
+    set innovation-installation  0.8
+
+    set default-environmental    0
+    set default-ease             1
+    set default-compatibility    0.7
+    set default-savings          0
+    set default-installation     1
+  ]
+  
+  
+  ;; DECISION MODEL PARAMETERS (schwarz)
+  if technology-diffusion-method = "schwarz" [
+    set postmaterial-imp-environment 0.3
+    set postmaterial-imp-ease        0.15
+    set postmaterial-imp-intrastr    0.1
+    set leader-imp-environment       0.3
+    set leader-imp-ease              0.2
+    set leader-imp-intrastr          0.15
+    
+    ; technology specific weights
+    set sh-imp-attitude     0.75
+    set sh-imp-control      0.25
+    set sh-control-intrastr 0.5
+    set sh-control-costs    0.3
+  
+    ; innovation characteristics
+    set sh-standard-environm 0
+    set sh-standard-ease     1
+    set sh-standard-infrastr 0.7
+    set sh-standard-savings  0
+    set sh-standard-costs    1
+    set sh-saving-environm   0.85
+    set sh-saving-ease       0.75
+    set sh-saving-infrastr   0.7
+    set sh-saving-savings    0.5
+    set sh-saving-costs      0.8
+  ]
+  
+  ;; DECISION MODEL PARAMETERS (schwarz-alternative)
+  if technology-diffusion-method = "schwarz_alternative" [
+    set leader_w_environmental 0.3
+    set leader_w_ease          0.175
+    set leader_w_compatibility 0.125 + (0.5 / 3)
+    set leader_w_savings       0
+    set leader_w_installation  (0.3 / 3) ; due to lower weighting of 'perceived behavior control' at Schwarz
+    
+    set main_w_environmental   0.2
+    set main_w_ease            0
+    set main_w_compatibility   0.25 + (0.5 / 3)
+    set main_w_savings         0.3
+    set main_w_installation    (0.3 / 3) ; due to lower weighting of 'perceived behavior control' at Schwarz
+    
+    set hed_w_environmental    0
+    set hed_w_ease             0
+    set hed_w_compatibility    0.35 + (0.5 / 3)
+    set hed_w_savings          0.1
+    set hed_w_installation     (0.3 / 3)
+  ]
+  
+  
+
+end

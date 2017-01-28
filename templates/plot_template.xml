@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE experiments SYSTEM "behaviorspace.dtd">
+<experiments>
+    <experiment name="seed_10_percent" repetitions="10" runMetricsEveryStep="true">
+        <setup>setup</setup>
+        <go>simulate</go>
+        <timeLimit steps="181"/>
+        
+        <metric>(count turtles with [adopting-technology?]) / (count turtles)</metric>
+        <metric>(count turtles with [(lifestyle = "leader" or lifestyle = "postmaterial") and adopting-technology?]) / (count turtles with [(lifestyle = "leader" or lifestyle = "postmaterial")])</metric>
+        <metric>(count turtles with [(lifestyle = "mainstream" or lifestyle = "traditional") and adopting-technology?]) / (count turtles with [(lifestyle = "mainstream" or lifestyle = "traditional")])</metric>
+        <metric>(count turtles with [lifestyle = "hedonistic" and adopting-technology?]) / (count turtles with [lifestyle = "hedonistic"])</metric>
+
+        <enumeratedValueSet variable="policy">
+        	<value value="&quot;off&quot;"/>
+        </enumeratedValueSet>
+
+        <enumeratedValueSet variable="effect-temperature"><value value="25"/></enumeratedValueSet>
+        <enumeratedValueSet variable="visualize?"><value value="false"/></enumeratedValueSet>
+        <enumeratedValueSet variable="behavior-diffusion-method"><value value="&quot;off&quot;"/></enumeratedValueSet>
+        <enumeratedValueSet variable="technology-effect-method"><value value="&quot;off&quot;"/></enumeratedValueSet>
+        <enumeratedValueSet variable="innovation"><value value="&quot;showerhead&quot;"/></enumeratedValueSet>
+        <enumeratedValueSet variable="p_leader_social"><value value="0.41"/></enumeratedValueSet>
+        <enumeratedValueSet variable="p_mainstream_social"><value value="0.83"/></enumeratedValueSet>
+        <enumeratedValueSet variable="p_hedonistic_social"><value value="1"/></enumeratedValueSet>
+        <enumeratedValueSet variable="technology-diffusion-method"><value value="&quot;schwarz&quot;"/></enumeratedValueSet>
+        <enumeratedValueSet variable="leader_w_social"><value value="0"/></enumeratedValueSet>
+        <enumeratedValueSet variable="main_w_social"><value value="0.45"/></enumeratedValueSet>
+        <enumeratedValueSet variable="hed_w_social"><value value="1"/></enumeratedValueSet>
+        <enumeratedValueSet variable="word-of-mouth?"><value value="true"/></enumeratedValueSet>
+        <enumeratedValueSet variable="deliberation_rate"><value value="0.031"/></enumeratedValueSet>
+        <enumeratedValueSet variable="technology-adoption"><value value="0"/></enumeratedValueSet>
+        <enumeratedValueSet variable="technology-awareness"><value value="5"/></enumeratedValueSet>
+        <enumeratedValueSet variable="debug?"><value value="false"/></enumeratedValueSet>
+    </experiment>
+</experiments>

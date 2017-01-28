@@ -1,0 +1,83 @@
+RUNNNING INVERSE MODELING (BEHAVIOR SEARCH)
+===
+
+CHOOSE MODELS
+---
+```{r}
+
+setwd("/Users/thorbenje/phd/models/chapter4/")
+netlogo_path <- '/Users/thorbenje/bin/netlogo-5.0.5/behaviorsearch/behaviorsearch_headless.sh'
+
+schwarz_womfalse <- "schwarz_womfalse"
+schwarz_womtrue <- "schwarz_womtrue"
+schwarz_alternative_womfalse <- "schwarz_alternative_womfalse"
+schwarz_alternative_womtrue <- "schwarz_alternative_womtrue"
+
+# choose models and search effort
+models <- c(schwarz_womfalse, schwarz_womtrue, schwarz_alternative_womfalse, schwarz_alternative_womtrue)
+number_searches <- 50
+
+# INFO: ca. 6 minutes per search (with 4 models)
+
+```
+
+SIMULATE MODELS
+---
+```{r}
+
+system.time(
+  
+for( model in models) {
+  print(paste("Run model:",model))
+  command1 <- paste('cd ', getwd(), ' && ',
+                    netlogo_path,
+                    ' -p output/', model, '.bsearch',
+                    ' -o output/', model,
+                    ' -t 8 -n ', number_searches, sep="")
+  system(command1)
+}
+
+)
+
+```
+
+FITNESS REPORT 
+---
+```{r}
+
+setwd("/Users/thorbenje/phd/models/chapter4/output/")
+
+# model <- "schwarz"
+
+for( model in models) {
+  
+  print("")
+  print(paste("INVERSE MODELING RESULTS FOR MODEL '",model,"':",sep=""))
+  model_dat <- read.csv(paste(model,".objectiveFunctionHistory.csv",sep=""))
+  
+  print(paste("Best fit of model:",              min(model_dat$fitness)))
+
+  print(model_dat[ order(model_dat$fitness ),][1,])
+  print("")
+}
+
+```
+
+Finding best parameters (but excluding zero-lines)
+---
+```{r}
+
+# model <- "schwarz_alternative_womtrue"
+
+for( model in models) {
+  
+  print("")
+  print(paste("INVERSE MODELING RESULTS FOR MODEL '",model,"' (EXLUDING ZERO-LINE):",sep=""))
+  model_dat <- read.csv(paste(model,".objectiveFunctionHistory.csv",sep=""))
+  
+  model_dat <- model_dat[model_dat$fitness != 29.58, ]
+  print(model_dat[ order(model_dat$fitness ),][1,])
+  print("")
+}
+
+```

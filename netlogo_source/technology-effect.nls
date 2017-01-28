@@ -1,0 +1,50 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; TECHNOLOGY EFFECT ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; REQUIREMENTS: 
+; - turtles need object variable 'adopting-behavior'
+; - turtles need object variable 'technology-effect-rate'
+
+; IF adopting: set 'adopting-behavior' to 0, 
+; ELSE: set to 1
+to technology-effect-direct
+  
+  ask turtles [
+    
+    ifelse adopting-technology? 
+      [ set adopting-behavior 0 ]
+      [ set adopting-behavior 1 ]
+  ]
+  
+end
+
+; asymptotic technology effect
+to technology-effect-asymptotic
+  
+  ask turtles [
+    
+    if adopting-technology? and adopting-behavior > effect-temperature [
+      set adopting-behavior (adopting-behavior - (technology-effect-rate * (adopting-behavior - effect-temperature)))
+    ]
+  ]
+end
+
+
+to technology-effect-incremental
+  
+  ask turtles [
+    
+    if adopting-technology? [ 
+      set adopting-behavior (adopting-behavior - technology-effect-decrement) 
+      if adopting-behavior < 0 [ set adopting-behavior 0 ]
+    ]
+    
+    ; throw error if 'adopting-behavior' > 1 of < 0
+    if adopting-behavior > 1 or adopting-behavior < 0 [
+      show "Error in technology-effect-incremental: 'adopting-behavior' is set incorrectly!"
+    ]
+  ]
+  
+end
+

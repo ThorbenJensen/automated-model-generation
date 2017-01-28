@@ -1,0 +1,19 @@
+
+;; assigning agents to lifestyles (ratio as in Schwarz 2013)
+to assign-lifestyles-schwarz
+  ask turtles [
+    ;; define lifestyle
+    let random-number random-float 1
+      if random-number < 0.109 
+        [set lifestyle "postmaterial" ]
+      if random-number >= 0.109 and random-number < 0.313 
+        [set lifestyle "leader" ]
+      if random-number >= 0.313 and random-number < 0.576 
+        [set lifestyle "traditional" ]
+      if random-number >= 0.576 and random-number < 0.823 
+        [set lifestyle "mainstream" ]
+      if random-number >= 0.823 
+        [set lifestyle "hedonistic" ]
+  ]
+end
+

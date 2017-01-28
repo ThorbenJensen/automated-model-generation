@@ -1,0 +1,91 @@
+PARAMETERS FOR AUTOMATED BEHAVIOR SEARCH
+===
+
+
+SAVE SIMULATION PARAMETERS
+---
+```{r}
+
+modelMetricReporter <- 'pattern-technology-adoption + (1000 * pattern-exponential-take-off)'
+modelMeasureIf      <- 'ticks = 180'
+modelStepLimit      <- '180'
+
+fitnessSamplingReplications <- 5   # sample size of 5 causes great variation regarding exponential pattern
+
+word_of_mouth <- c("true", "false")
+
+```
+
+
+LOAD XML TEMPLATES (for each model)
+---
+```{r}
+
+setwd("/Users/thorbenje/phd/models/chapter4/")
+library(XML)
+
+schwarz <- xmlParseDoc("templates/schwarz_template.bsearch")
+schwarz_alternative <- xmlParseDoc("templates/schwarz_alternative_template.bsearch")
+
+templates <- c(schwarz, schwarz_alternative)
+
+
+```
+
+
+WRITE SIMULATION PARAMETERS TO XML - AND TO FILE
+---
+```{r}
+
+# word_of_mouth <- c("true")
+# xml <- schwarz
+# wom <- "true"
+
+# TODO: also iterate over 'word-of-mouth'
+for (wom in word_of_mouth) {
+  for(xml in templates) {
+  
+    node <- getNodeSet(xml, "//modelMetricReporter")[[1]]
+    xmlValue(node) <- modelMetricReporter
+    
+    node <- getNodeSet(xml, "//modelMeasureIf")[[1]]
+    xmlValue(node) <- modelMeasureIf
+    
+    node <- getNodeSet(xml, "//modelStepLimit")[[1]]
+    xmlValue(node) <- modelStepLimit
+    
+    node <- getNodeSet(xml, "//fitnessSamplingReplications")[[1]]
+    xmlValue(node) <- fitnessSamplingReplications
+    
+    node <- getNodeSet(xml, "//paramSpec")[[2]]
+    xmlValue(node) <- paste('[\"word-of-mouth?\" ', wom,"]",sep="")
+    
+    ## WRITE TO FILE
+    # get model name
+    node <- getNodeSet(xml, "//paramSpec")[[1]]
+    value <- xmlValue(node)
+    model_name <- strsplit(value, split = "\"")[[1]][4]
+    
+    print(paste("Writing model '",model_name,"' to file.",sep=""))
+    filename <- paste("output/",model_name,"_wom",wom,".bsearch",sep="")
+    saveXML(xml, file=filename)
+  }
+}
+
+```
+
+
+SAVE XML TO FILE ('output' folder)
+---
+```{r}
+
+#saveXML(schwarz, file="output/schwarz.bsearch")
+#saveXML(schwarz_wom, file="output/schwarz_wom.bsearch")
+#saveXML(schwarz_nowom, file="output/schwarz_nowom.bsearch")
+#saveXML(schwarz_alternative, file="output/schwarz_alternative.bsearch")
+#saveXML(schwarz_alternative_wom, file="output/schwarz_alternative_wom.bsearch")
+#saveXML(schwarz_alternative_nowom, file="output/schwarz_alternative_nowom.bsearch")
+
+```
+
+

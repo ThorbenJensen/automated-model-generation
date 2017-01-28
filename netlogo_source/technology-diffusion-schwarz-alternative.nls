@@ -1,0 +1,72 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; TECHNOLOGY DIFFUSION ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+; method controling behavior diffusion
+to technology-diffusion-schwarz-alternative
+  
+  ; deliberate at montly replacement rate for showerhead
+  if random-float 1 < deliberation_rate [
+    
+    ; calculate social norm (i.e. ratio of peers that are adopting)
+    let innovation-norm ""
+    ifelse (count in-link-neighbors) > 0 
+      [ set innovation-norm (count in-link-neighbors with [ adopting-technology? ]) / count in-link-neighbors ]
+      [ set innovation-norm 0 ]
+    
+    ; create local variables for decision weights
+    let w_environmental  ""
+    let w_ease           ""
+    let w_compatibility  ""
+    let w_savings        ""
+    let w_installation   ""
+    let social           ""
+    
+    ; LOAD DECISION WEIGHTS according to lifestyle
+    ifelse lifestyle = "leader" or lifestyle = "postmaterial" [
+      set w_environmental  leader_w_environmental
+      set w_ease           leader_w_ease           
+      set w_compatibility  leader_w_compatibility 
+      set w_savings        leader_w_savings        
+      set w_installation   leader_w_installation   
+      set social           leader_w_social           
+    ][
+    
+    ifelse lifestyle = "mainstream" or lifestyle = "traditional" [
+      set w_environmental  main_w_environmental
+      set w_ease           main_w_ease           
+      set w_compatibility  main_w_compatibility 
+      set w_savings        main_w_savings        
+      set w_installation   main_w_installation   
+      set social           main_w_social           
+    ]
+    
+    [
+    if lifestyle = "hedonistic" [          
+      set w_environmental  hed_w_environmental
+      set w_ease           hed_w_ease           
+      set w_compatibility  hed_w_compatibility 
+      set w_savings        hed_w_savings        
+      set w_installation   hed_w_installation   
+      set social           hed_w_social           
+    
+    ]]]   
+    
+    ; DECIDE ON ADOPTION
+    
+    let innovation_attitude ((w_environmental * innovation-environmental) + (w_ease * innovation-ease) + (w_compatibility * innovation-compatibility) + (w_savings * innovation-savings) + (w_installation * innovation-installation))
+    let innovation_utility  ((1 - social) * innovation_attitude) + (social * innovation-norm)
+    
+    let default_attitude ((w_environmental * default-environmental) + (w_ease * default-ease) + (w_compatibility * default-compatibility) + (w_savings * default-savings) + (w_installation * default-installation))
+    let default_utility  ((1 - social) * default_attitude) + (social * (1 - innovation-norm))
+    
+    set adopting-technology? (innovation_utility > default_utility)
+    
+    ; make neighbors aware
+    if adopting-technology? [ ask out-link-neighbors [ set aware-of-technology? true ]]
+    
+    if debug? [ print (word "innovation_utility: " innovation_utility " - default_utility: " default_utility) ]
+    
+  ]
+end

@@ -1,0 +1,6 @@
+"search-number","evaluation","number-of-nodes*","network-method*","technology-diffusion-method*","word-of-mouth?*","seeding-percentage*","debug?*","deliberation_rate*","innovation*","leader_w_social*","main_w_social*","hed_w_social*","num-replicates","best-fitness-so-far"
+"1","300","1000","""suslab""","""schwarz-alternative""","true","1","false","0.038221139075966734","""showerhead""","0.5792699578269153","0.8336969119518645","0.7993683902520324","5","28.456"
+"2","300","1000","""suslab""","""schwarz-alternative""","true","1","false","0.030955599186872802","""showerhead""","0.46918161070705466","0.6032118236663092","0.7318225446055","5","28.886999999999997"
+"3","300","1000","""suslab""","""schwarz-alternative""","true","1","false","0.01630748056343346","""showerhead""","0.07562784022292111","0.3088083255952752","0.4209565818245156","5","7.949000000000002"
+"4","300","1000","""suslab""","""schwarz-alternative""","true","1","false","0.03544416395303346","""showerhead""","0.4133428867487864","1","0.9507342423748198","5","29.003"
+"5","300","1000","""suslab""","""schwarz-alternative""","true","1","false","0.03046441575706911","""showerhead""","0.6833411966409675","1","0.22935424306627109","5","28.994"

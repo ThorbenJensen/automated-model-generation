@@ -1,0 +1,54 @@
+INVERSE MODELING: VISUALIZING THE SEARCH PROCESS
+
+INFO: RUN AFTER 'inverse_modeling.Rmd'
+
+PARAMETERS
+```{r}
+
+setwd("/Users/thorbenje/phd/models/chapter4/output/")
+
+schwarz_womtrue <- "schwarz_womtrue"
+schwarz_womfalse <- "schwarz_womfalse"
+schwarz_alternative_womtrue <- "schwarz_alternative_womtrue"
+schwarz_alternative_womfalse <- "schwarz_alternative_womfalse"
+
+# choose models and search effort
+models <- c(schwarz_womtrue, schwarz_womfalse, schwarz_alternative_womtrue, schwarz_alternative_womfalse)
+
+```
+
+
+```{r}
+
+model <- schwarz_alternative_womfalse
+
+  print("")
+  print(paste("INVERSE MODELING RESULTS FOR MODEL '",model,"':",sep=""))
+  model_dat <- read.csv(paste(model,".objectiveFunctionHistory.csv",sep=""))
+  
+  print(paste("Best fit of model:",              min(model_dat$fitness)))
+  print(paste("Best fit WITH word-of-mouth:",    min(model_dat[model_dat$word.of.mouth..=="true", ]$fitness)))
+  print(paste("Best fit WITHOUT word-of-mouth:", min(model_dat[model_dat$word.of.mouth..=="false",]$fitness)))
+  
+  print(model_dat[ order(model_dat$fitness ),][1,])
+  print("")
+  
+  library(rgl)
+  myColorRamp <- function(colors, values) {
+    v <- (values - min(values))/diff(range(values))
+    x <- colorRamp(colors)(v)
+    rgb(x[,1], x[,2], x[,3], maxColorValue = 255)
+  }
+  
+  cols <- myColorRamp(c("red", "blue"), dat$fitness)
+  
+  dat <- model_dat
+  plot3d(dat$leader_w_social., dat$main_w_social., dat$hed_w_social., 
+         col=rainbow(30)[(dat$fitness-min(dat$fitness))]
+         #col=ramp.col(c("black","green"))[dat$fitness]
+         #col=cols
+         , size=3)
+
+
+```
+

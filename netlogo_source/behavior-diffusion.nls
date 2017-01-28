@@ -1,0 +1,82 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; BEHAVIOR DIFFUSION ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; REQUIREMENTS:
+; - turtles need object variable 'adopting-behavior' 
+; - weighting parameter 'behavior-diffusion-social' 
+; - habit-parameter 'adopting-behavior-var'
+
+; based on Anderson et al. (2014)
+to behavior-diffusion-anderson
+  
+  ask-concurrent turtles [
+    
+    if any? link-neighbors [
+      
+      ; change behavior according to noise
+      set adopting-behavior (adopting-behavior + random-normal 0 behavior-noise)
+      
+      ; calculate mean of peers
+      let peer-mean mean [adopting-behavior] of link-neighbors
+      
+      ; NEW: behavior diffuses ONLY if 'dissonance-threshold' is exceeded
+      if (abs (peer-mean - adopting-behavior)) > dissonance-threshold [
+        
+        ; calculate new behavior
+        let new-behavior (((1 - behavior-diffusion-social) * adopting-behavior) + (behavior-diffusion-social * peer-mean))
+        
+        ; change behavior towards weighted
+        set adopting-behavior new-behavior
+      ]
+    ]
+  ]
+  
+end
+
+; based on azar & menassa (2014)
+to behavior-diffusion-azar
+  
+  ask turtles [
+    
+    ; choose one random peer (in-link-neighbor)
+    let peer one-of link-neighbors
+    
+    if peer != nobody [
+      
+      ; observe his 'adopting-behavior'
+      let peer-adopting-behavior ([adopting-behavior] of peer)
+      
+      ;; calculate overlap
+      ; calculate min
+      let overlap-min min (list (adopting-behavior + adopting-behavior-var) (peer-adopting-behavior + adopting-behavior-var))
+      ; calculate max
+      let overlap-max max (list (adopting-behavior - adopting-behavior-var) (peer-adopting-behavior - adopting-behavior-var))      
+      ; calculate overlap
+      let overlap (overlap-min - overlap-max)
+      
+      ; calculate if convergence takes place - 'adopting-behavior-variance' assumed homogeneous and constanct
+      if overlap > adopting-behavior-var [
+         
+        let old-behavior adopting-behavior
+        
+        ; converge
+        set adopting-behavior (adopting-behavior + ( 0.5 * ((overlap / adopting-behavior-var) - 1) * (peer-adopting-behavior - adopting-behavior)))
+        
+        let new-behavior adopting-behavior
+        
+        ;if new-behavior != old-behavior [ print "behavior changed!" ]
+        
+        ; rest to 1 as maximum
+        ;if adopting-behavior > 1 [ set adopting-behavior 1 ]
+        
+      ]
+      
+      
+      
+      ; OPTIONAL: narrow variance by habit formation
+      ; for now, start with homogeneous 'adopting-behavior-variance'
+      
+    ]
+  ]
+end

@@ -1,0 +1,79 @@
+to read-network
+
+  file-close
+  file-open "input/network.csv"  
+  let null file-read-line   ; skip first line
+
+  ; until end of file: read line and create link
+  while [ not file-at-end? ] [
+    let in-neighbor file-read
+    let out-neighbor  file-read
+    ;print (word "out: " out-neighbor "; in: " in-neighbor)
+    
+    ask turtle in-neighbor [ create-link-from (turtle out-neighbor) ]
+  ]
+  
+  file-close
+ 
+end
+
+
+;; write agents to CSV file in subfolder 'input'
+to read-agents
+  
+  clear-all
+  ask patches [set pcolor white]
+
+  file-open "input/agents.csv"  
+  let null file-read-line   ; skip first line
+  
+  ; until end of file:
+  while [ not file-at-end? ] [
+    ; read line and create agent
+    let id file-read
+    let x file-read
+    let y file-read
+    let group file-read
+    
+    create-turtles 1 [
+      set xcor x
+      set ycor y
+      set lifestyle group
+    ]
+  ]
+  
+  file-close
+  
+end
+
+
+;; write agents to file
+to write-agents
+  
+  let file user-new-file   ; user chooses new file
+  
+  ; create or overwrite 
+  carefully [ 
+    file-delete file 
+    file-open file
+  ]
+  [ file-open file ] 
+  
+  file-print " id x y group"   ; first line
+  
+  ; write id, position and group of each turtle to file
+  let i 0
+  while [ i <= max [who] of turtles ]
+  [
+    ask turtle i [
+      file-write who 
+      file-write xcor 
+      file-write ycor
+      file-write lifestyle
+      file-print ""    
+    ]
+    
+    set i i + 1
+  ]   
+  file-close
+end

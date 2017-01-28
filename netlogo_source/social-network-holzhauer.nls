@@ -1,0 +1,149 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; HOLZHAUER ALGORITHM ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; TODO: 
+; - create in-links instead of out-links
+; - use ring-iteration
+
+; adapted HDD algorithm by Holzhauser (2013), adapted and parameterized to Schwarz (2007), changed in-links to out-links
+to setup-holzhauer-network  ;; LINK PARAMETERS
+  clear-links
+  reset-ticks
+    
+  let p-global-link 0.1 ; probability for global links (i.e. such links whith link-length > max-distance)
+  let distance-exponent -2
+  
+  ;; FOR EACH agent i:
+  ask turtles [
+    
+    ; WHILE: agent i has free links
+    while [ has-free-links? ] [
+      
+      ; choose milieu -> set MILIEU
+      let other-lifestyle choose-other-lifestyle
+      
+      let agent-list [ ]
+      
+      ; select agent j who
+      ;   - are within max-distance
+      ;   - is not yet connected with agent i
+      ;   - is of the chosen MILIEU
+      ask other turtles with [distance myself < max-distance and lifestyle = other-lifestyle and not out-link-neighbor? myself] [ ; TODO: out-link-neighbor?
+        
+        ; calculate distance dependance (p-distance) from distance
+        let p-distance (floor ((( distance myself) ^ distance-exponent) * 200))
+        
+        repeat p-distance [ set agent-list lput who agent-list]
+      ]
+      
+      ; throw error if no neighbors found
+      if empty? agent-list [ show "error: agent-list is empty! increment 'max-distance' go again!" ]
+      
+      ; draw ID of 'other-agent' from agent-list
+      let other-agent one-of agent-list
+      
+      ; create in-link from agent j ;; POSSIBLE PROBLEM: MORE AGENTS AT GREATER DISTANCE -> LIKELY TO ASSOSCIATE WITH AGENTS THAT ARE FURTHER AWAY -> RINGS COULD BE (COMPLICATED) SOLUTION
+      create-link-to (turtle other-agent)
+      
+      ; IF has no free links: stop  ;; TODO: check that stop does not stop other agents from getting the links they should!
+      if (not has-free-links?) [ stop ]
+      
+      ; AT "p-global-link":
+      if random-float 1 < p-global-link [
+        ; choose milieu -> set MILIEU
+        set other-lifestyle choose-other-lifestyle
+        
+        ; select agent j who
+        ;   - is not yet connected with agent i
+        ;   - is of chosen milieu
+        set other-agent (one-of other turtles with [lifestyle = other-lifestyle and not out-link-neighbor? myself])
+        
+        ; create in-link from agent j
+        create-link-to other-agent
+        
+      ]
+    ]
+  ]
+  tick
+end
+
+; reports true ONLY IF agent has free in-links
+to-report has-free-links?
+  
+  ; connectedness: number out-links for milieus (see Schwarz 2007)
+  let out-links-postmaterial 15
+  let out-links-leader 15
+  let out-links-mainstream 5
+  let out-links-traditional 5
+  let out-links-hedonistic 10
+  
+
+  if lifestyle = "postmaterial" [
+    ifelse count out-link-neighbors >= out-links-postmaterial
+      [ report false ]
+      [ report true ]
+  ]  
+  if lifestyle = "leader" [
+    ifelse count out-link-neighbors >= out-links-leader
+      [ report false ]
+      [ report true ]
+  ]
+  if lifestyle = "mainstream" [
+    ifelse count out-link-neighbors >= out-links-mainstream 
+      [ report false ]
+      [ report true ]
+  ]
+  if lifestyle = "traditional" [
+    ifelse count out-link-neighbors >= out-links-traditional
+      [ report false ]
+      [ report true ]
+  ]
+  if lifestyle = "hedonistic" [
+    ifelse count out-link-neighbors >= out-links-hedonistic
+      [ report false ]
+      [ report true ]
+  ]
+  
+  ;; HERE: should not be here
+  print "error at has-free-links: nothing reported!" 
+end
+
+; chooses other lifestyle to connect to
+to-report choose-other-lifestyle
+  ; homophiliy: cumulative connection probabilities between lifestyles (out->in)
+  
+  ; get random number for choice
+  let random-number random-float 1 
+  
+  if lifestyle = "leader" [
+    if random-number < 0.5 [ report "leader" ]
+    if random-number >= 0.5 and random-number < 0.8 [ report "postmaterial" ]
+    if random-number >= 0.8 [ report "hedonistic" ]
+  ]
+  if lifestyle = "postmaterial" [
+    if random-number < 0.3 [ report "leader" ]
+    if random-number >= 0.3 and random-number < 0.8 [ report "postmaterial" ]
+    if random-number >= 0.8 [ report "hedonistic" ]
+  ]
+  if lifestyle = "traditional" [
+    if random-number < 0.5 [ report "leader" ]
+    if random-number >= 0.5 and random-number < 0.6 [ report "postmaterial" ]
+    if random-number >= 0.6 and random-number < 0.9 [ report "traditional" ]
+    if random-number >= 0.9 [ report "mainstream" ]
+  ]
+  if lifestyle = "mainstream" [
+    if random-number < 0.5 [ report "leader" ]
+    if random-number >= 0.5 and random-number < 0.6 [ report "postmaterial" ]
+    if random-number >= 0.6 and random-number < 0.7 [ report "traditional" ]
+    if random-number >= 0.7 [ report "mainstream" ]
+  ]
+  if lifestyle = "hedonistic" [
+    if random-number < 0.25 [ report "leader" ]
+    if random-number >= 0.25 and random-number < 0.5 [ report "postmaterial" ]
+    if random-number >= 0.5 [ report "hedonistic" ]
+  ]
+
+  ; HERE: error at selection!
+  print "error at choose-other-lifestyle: none chosen!"
+end

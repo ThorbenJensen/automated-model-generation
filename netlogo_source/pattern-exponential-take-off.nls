@@ -1,0 +1,41 @@
+;; PATTERN ON TECHNOLOGY ADOPTION AFTER 180 TIME STEPS  
+
+to-report pattern-exponential-take-off  
+  
+  if length timeline > 2 [
+    
+    ; difference
+    let diff_vector (difference timeline)
+    if debug? [ print diff_vector ]
+
+    ; calculate the ratio of above-linear values (except first and last element of limeline)
+    set diff_vector but-first (but-last diff_vector)
+    let length_diff length diff_vector
+    let count_true length filter [? = true] (map [? < 0] diff_vector)
+    let ratio_above_linear (count_true / length_diff)
+    
+    ; if more than 10% of values above the linear line: report 1 (as optimization penalty)
+    if ratio_above_linear > 0.1 [ report 1 ]
+    ; else: report 0 (no penalty)
+    report 0
+  ]  
+  
+  report 0
+  
+end
+
+
+to-report difference [liste]
+
+  let timeline_end last liste
+  let timeline_length length liste
+
+  ; calculate linear vector (with same start and end)
+  let linear (map [? / (timeline_length - 1)] (n-values timeline_length [?]))
+  set linear (map [? * timeline_end] linear)
+  
+  ; calculate difference between real and linear timeline
+  let diff (map - linear liste)
+  
+  report diff
+end

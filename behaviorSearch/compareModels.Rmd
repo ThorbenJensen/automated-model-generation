@@ -1,0 +1,126 @@
+COMPARING SCHWARZ MODEL VERSIONS
+===
+
+LOAD DATA
+===
+```{r}
+
+setwd("/Users/thorbenje/phd/models/chapter4/behaviorSearch/")
+#dir()
+
+model1 <- "schwarz_flexible"
+model2 <- "schwarz_alternative"
+model3 <- "schwarz_flexible_wom"
+model4 <- "schwarz_alternative_wom"
+model5 <- "schwarz_flexible_general"
+model6 <- "schwarz_alternative_general"
+
+
+
+bestHistory1  <- read.csv(paste(model1, ".bestHistory.csv", sep=""))
+finalBests1   <- read.csv(paste(model1, ".finalBests.csv" , sep=""))
+objectiveFunctionHistory1          <- read.csv(paste(model1, ".objectiveFunctionHistory.csv", sep=""))
+
+bestHistory2              <- read.csv(paste(model2, ".bestHistory.csv", sep=""))
+finalBests2               <- read.csv(paste(model2, ".finalBests.csv" , sep=""))
+objectiveFunctionHistory2 <- read.csv(paste(model2, ".objectiveFunctionHistory.csv", sep=""))
+
+bestHistory3              <- read.csv(paste(model3, ".bestHistory.csv", sep=""))
+finalBests3               <- read.csv(paste(model3, ".finalBests.csv" , sep=""))
+objectiveFunctionHistory3 <- read.csv(paste(model3, ".objectiveFunctionHistory.csv", sep=""))
+
+bestHistory4              <- read.csv(paste(model4, ".bestHistory.csv", sep=""))
+finalBests4               <- read.csv(paste(model4, ".finalBests.csv" , sep=""))
+objectiveFunctionHistory4 <- read.csv(paste(model4, ".objectiveFunctionHistory.csv", sep=""))
+
+bestHistory5              <- read.csv(paste(model5, ".bestHistory.csv", sep=""))
+finalBests5               <- read.csv(paste(model5, ".finalBests.csv" , sep=""))
+objectiveFunctionHistory5 <- read.csv(paste(model5, ".objectiveFunctionHistory.csv", sep=""))
+
+bestHistory6              <- read.csv(paste(model6, ".bestHistory.csv", sep=""))
+finalBests6               <- read.csv(paste(model6, ".finalBests.csv" , sep=""))
+objectiveFunctionHistory6 <- read.csv(paste(model6, ".objectiveFunctionHistory.csv", sep=""))
+
+```
+
+
+PLOT RESPONSE SURFACE WITH FIXES DELIBERATION FREQUENCY
+===
+```{r}
+
+library(ggplot2)
+library(scatterplot3d) 
+library(rgl)
+
+# experiment 1
+dat <- objectiveFunctionHistory1
+cols = rainbow(64)[  -dat$fitness + max(dat$fitness)  ]
+plot3d(dat$p_hedonistic_social., dat$p_leader_social., dat$p_mainstream_social., 
+       size=3, 
+       col = cols) 
+
+# experiment 2
+dat2 <- objectiveFunctionHistory2
+cols = rainbow( 64 )[  -dat2$fitness + max(dat2$fitness)  ]
+plot3d(dat2$hed_w_social., dat2$leader_w_social., dat2$main_w_social., 
+       size=3, 
+       col = cols) 
+
+```
+
+PRINT BEST FITS AS TABLES
+ 
+```{r}
+
+
+# get best n fits for experiment
+best_fits <- function(history, n) {
+  
+  history <- history[ order(history$fitness) ,]
+  
+  return (history[1:n,])
+}
+
+
+# experiment 1
+best_fits(objectiveFunctionHistory1, 10)
+
+# experiment 2
+best_fits(objectiveFunctionHistory2, 10)
+
+# experiment 3
+best_fits(objectiveFunctionHistory3, 10)
+
+# experiment 4
+best_fits(objectiveFunctionHistory4, 10)
+
+# experiment 5
+View(best_fits(objectiveFunctionHistory5, 10))
+
+# experiment 6
+View(best_fits(objectiveFunctionHistory6, 20))
+
+```
+
+
+CHECK TIME STEPS UNTIL CONVERGENCE
+===
+```{r}
+
+# history <- bestHistory3
+
+plot_convergence <- function(history) {
+ 
+  hist(history$evaluation)
+}
+
+
+plot_convergence(bestHistory1)
+plot_convergence(bestHistory2)
+plot_convergence(bestHistory3)
+plot_convergence(bestHistory4)
+plot_convergence(bestHistory5)
+plot_convergence(bestHistory6)
+
+```
+

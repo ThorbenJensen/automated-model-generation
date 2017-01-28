@@ -1,0 +1,34 @@
+RUNNING BEHAVIORSERACH FOR BOTH SCHWARZ MODELS
+==
+
+
+```{r}
+
+# DEFINE EXPERIMENTS
+setwd("/Users/thorbenje/phd/models/chapter4/behaviorSearch/")
+#dir()
+
+e1 <- "schwarz_flexible"
+e2 <- "schwarz_alternative"
+e3 <- "schwarz_flexible_wom"
+e4 <- "schwarz_alternative_wom"
+e5 <- "schwarz_flexible_general"
+e6 <- "schwarz_alternative_general"
+
+
+# SELECT EXPERIMENTS TO RUN
+experiments <- e6
+
+
+# RUN EXPERIMENT(S)
+for( experiment in experiments) {
+  command1 <- paste('cd ', getwd(), ' &&',
+                    ' /Users/thorbenje/bin/netlogo-5.0.5/behaviorsearch/behaviorsearch_headless.sh',
+                    ' -p ', experiment, '.bsearch',
+                    ' -o ', experiment,
+                    ' -t 4 -n 5', sep="")
+  system(command1)
+}
+
+```
+
